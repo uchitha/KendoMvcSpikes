@@ -1,0 +1,77 @@
+﻿@using Train.Models
+@using Newtonsoft.Json;
+
+@{
+    ViewBag.Title = "Grid";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model VehicleStatusViewModel
+@section HeadContent{
+    <style>
+        #GridVehicles div.k-grid-content
+        {
+            max-height: 400px;
+        }
+    </style>
+    <script type="text/x-kendo-tmpl" id="checkBoxListTempl">
+        <div class='checkboxlist'>
+            <div style="margin-bottom:3px; vertical-align:top;"><input type="checkbox" value="#:Id#" />&nbsp;#:Value#</div>
+        </div>
+    </script>
+    <script type="text/x-kendo-tmpl" id="dummyTempl">
+        <div class='checkboxlist'>
+            <span>dummy</span>            
+        </div>
+    </script>
+}
+<h2>
+    Demo Grid - Customized Filter</h2>
+<br />
+<div>
+</div>
+<div>
+    @(
+ Html.Kendo().Grid<Vehicle>()
+        .Name("GridVehicles")
+        .DataSource(ds => ds
+                              .Ajax()
+                              .Read(read => read.Action("GetAllVehicles", "Grid"))
+                              .PageSize(50)
+        )
+            //   .Events(e => e.FilterMenuInit("onFilterInit"))
+        .Scrollable(s => s.Enabled(true).Height("auto"))
+        .Pageable(p => p.Enabled(true).PreviousNext(true).Input(true).PageSizes(new[] { 50, 100, 200 }))
+        .Sortable(s => s.Enabled(true))
+        .Groupable(g => g.Enabled(true))
+        .Filterable(f => f.Enabled(true)
+                          .Extra(false)
+          )
+            // .ColumnMenu()
+        .Columns(c =>
+        {
+            c.Bound(o => o.Id);
+            c.Bound(o => o.Number);
+            c.Bound(o => o.Location).Filterable(f => f.UI("locationFilter"));
+            c.Bound(o => o.TimeAtLocation).Format("{0:dd/MM/yyyy HH:mm}");
+            c.Bound(o => o.Position);
+            c.Bound(o => o.TrainNumber).Title("Train");
+            c.Bound(o => o.VehicleType).Title("Type").Filterable(f => f.UI("vehicleTypeFilter"));
+            c.Bound(o => o.LastEventDateTime).Format("{0:dd/MM/yyyy HH:mm}");
+            c.Bound(o => o.DetachFlag);
+        }).Reorderable(r => r.Columns(true))
+    )
+</div>
+
+<script>
+
+    function locationFilter(element) {
+        var grid = $("#GridVehicles").data('kendoGrid');
+        MyMvcApp.customKendoFilters.filterByAjax(element, 'Location', '@Url.Action("_LoadLocations")', grid.dataSource);
+    }
+
+    function vehicleTypeFilter(element) {
+        var types = '@Html.Raw(JsonConvert.SerializeObject(Model.VehicleTypes))';
+        var grid = $("#GridVehicles").data('kendoGrid');
+        MyMvcApp.customKendoFilters.filter(element, 'VehicleType', JSON.parse(types), grid.dataSource);
+    }
+</script>

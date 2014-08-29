@@ -1,0 +1,22 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+    <link href="@Url.Content("~/Content/Site.css")" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/kendo/kendo.common.min.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/kendo/kendo.default.min.css")" />
+    <script type="text/javascript"  src="@Url.Content("~/Scripts/kendo/jquery.min.js")"></script>
+     <script type="text/javascript" src="@Url.Content("~/Scripts/json2.js")"></script>
+    <script type="text/javascript" src="@Url.Content("~/Scripts/kendo/kendo.all.min.js")"></script>
+    <script type="text/javascript" src="@Url.Content("~/Scripts/kendo/kendo.aspnetmvc.min.js")"></script>
+    <script type="text/javascript" src="@Url.Content("~/Scripts/kendo-ext.js")"></script>
+    <script type="text/javascript" src="@Url.Content("~/Scripts/kendo-customFilters.js")"></script>
+    <script type="text/javascript" src="@Url.Content("~/Scripts/rsbutil.js")"></script>
+
+    @RenderSection("HeadContent")
+</head>
+
+<body>
+    @RenderBody()
+</body>
+</html>

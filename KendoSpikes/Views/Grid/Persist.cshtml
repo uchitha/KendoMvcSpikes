@@ -1,0 +1,190 @@
+﻿@using Train.Models
+@{
+    ViewBag.Title = "Grid";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model VehicleStatusViewModel
+       
+@section HeadContent{
+    <style>
+        #GridVehicles div.k-grid-content {
+            max-height: 400px;
+        }
+    </style>
+}
+
+<h2>Demo Grid - Persist Grid Settings</h2>
+<h5>Persists following settings in session and applies to grid upon revisits/refreshes</h5>
+<ul>
+    <li>Gropuping</li>
+    <li>Sorting</li>
+    <li>Filtering</li>
+    <li>Paging</li>
+    <li>Column Show/Hide</li>
+    <li>Column Order</li>
+    <li>TODO - Row Selection</li>
+</ul>
+<br/>
+<div>
+    @(
+    Html.Kendo().Grid<Vehicle>()
+        .Name("GridVehicles")
+        .DataSource(ds => ds
+                              .Ajax()
+                              .Read(read => read.Action("GetAllVehicles", "Grid"))
+                              .PageSize(50)
+        )
+        .Events(e =>
+                    {
+                        e.DataBound("gridDataBound");
+                        e.ColumnHide("gridColumnHide");
+                        e.ColumnShow("gridColumnShow");
+                        e.ColumnReorder("gridColumnReorder");
+                    })
+        .AutoBind(false)
+        .Scrollable(s => s.Enabled(true).Height("auto"))
+        .Pageable(p => p.Enabled(true).PreviousNext(true).Input(true).PageSizes(new [] {50,100,200}))
+        .Sortable(s => s.Enabled(true))
+        .Groupable(g => g.Enabled(true))
+        .Filterable(f => f.Enabled(true))
+        .ColumnMenu()
+        .Columns(c =>
+                     {
+                         c.Bound(o => o.Id);
+                         c.Bound(o => o.Number);
+                         c.Bound(o => o.Location);
+                         c.Bound(o => o.TimeAtLocation).Format("{0:dd/MM/yyyy HH:mm}");
+                         c.Bound(o => o.Position);
+                         c.Bound(o => o.TrainNumber).Title("Train");
+                         c.Bound(o => o.VehicleType).Title("Type");
+                         c.Bound(o => o.TripCount).Title("Trip Count");
+                         c.Bound(o => o.LastEventDateTime).Format("{0:dd/MM/yyyy HH:mm}");
+                         c.Bound(o => o.DetachFlag);
+                     }).Reorderable(r => r.Columns(true))
+          )
+</div>
+
+<script>
+
+    $(document).ready(function () {
+       
+        log('On Document Load');
+        var gridStateRequest = gridLoadState();
+
+        gridStateRequest.done(function (gridState) {
+            if (gridState === '') {
+                $("#GridVehicles").data("kendoGrid").dataSource.read();
+                return;
+            }
+            log(gridState);
+         
+            var gridStateJson = JSON.parse(gridState);
+            reloadGridWithStatus('GridVehicles', gridStateJson);
+            
+        });
+       
+    });
+
+    function reloadGridWithStatus(gridName, state) {
+
+        var grid = $('#' + gridName).data('kendoGrid');
+        
+        var options = grid.options;
+        options.columns = state.columns;
+
+        options.dataSource.page = state.page;
+        options.dataSource.pageSize = state.pageSize;
+        options.dataSource.sort = state.sort;
+        options.dataSource.filter = state.filter;
+        options.dataSource.group = state.group;
+
+        grid.destroy();
+
+        $('#' + gridName)
+            .empty()
+            .kendoGrid(options);
+        
+        //Need to resolve the grid again since the previous 'grid' is destroyed
+        $('#' + gridName).data('kendoGrid').dataSource.read();
+    }
+
+    function gridColumnHide(e) {
+        var grid = $("#GridVehicles").data("kendoGrid");
+        var url = '@Url.Action("SaveState")';
+
+        var saveState = gridSaveState(grid, url);
+        saveState.done(function () {
+            log('Grid State Saved to Session (After Column Hide)');
+        });
+    }
+
+    function gridColumnShow(e) {
+        var grid = this;
+        var saveState = gridSaveState(grid);
+        saveState.done(function () {
+            log('Grid State Saved to Session (After Column Show)');
+        });
+    }
+
+    function gridColumnReorder(e) {
+//        var grid = this;
+//        setTimeout(function () {
+//            var saveState = gridSaveState(grid);
+//            saveState.done(function () {
+//                log('Grid State Saved to Session (After Column Reorder)');
+//            });
+        //        });
+        gridDataBound(e);
+    }
+
+    function gridDataBound(e) {
+        var grid = this;
+        setTimeout(function() {
+            var saveState = gridSaveState(grid);
+            saveState.done(function() {
+                log('Grid State Saved to Session (After Column Databound)');
+            });
+        });
+    }
+
+    //common function
+    function gridSaveState(grid) {
+
+        var dataSource = grid.dataSource;
+        
+        var gridState = {
+            columns: grid.columns,
+            page: dataSource.page(),
+            pageSize: dataSource.pageSize(),
+            sort: dataSource.sort(),
+            filter: dataSource.filter(),
+            group: dataSource.group()
+        };
+        var gridStateSerialized = JSON.stringify(gridState);
+
+        
+        log(gridStateSerialized);
+
+        var url = '@Url.Action("SaveState")';
+        var saveStateRequest = $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                gridState: gridStateSerialized
+            }
+        });
+
+        return saveStateRequest;
+    }
+
+    //common function
+    function gridLoadState() {
+        var url = '@Url.Action("LoadState")';
+        var loadStateRequest = $.ajax({
+            url: url,
+            type: 'POST'
+        });
+
+        return loadStateRequest;
+    }
+</script>
