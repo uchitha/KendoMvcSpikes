@@ -55,7 +55,7 @@
             c.Bound(o => o.TimeAtLocation).Format("{0:dd/MM/yyyy HH:mm}");
             c.Bound(o => o.Position);
             c.Bound(o => o.TrainNumber).Title("Train");
-            c.Bound(o => o.VehicleType).Title("Type").Filterable(f => f.UI("vehicleTypeFilter"));
+            c.Bound(o => o.VehicleType).Title("Type");
             c.Bound(o => o.LastEventDateTime).Format("{0:dd/MM/yyyy HH:mm}");
             c.Bound(o => o.DetachFlag);
         }).Reorderable(r => r.Columns(true))

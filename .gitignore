@@ -1,1 +1,3 @@
 *.suo
+KendoSpikes/bin/*
+KendoSpikes/obj/*

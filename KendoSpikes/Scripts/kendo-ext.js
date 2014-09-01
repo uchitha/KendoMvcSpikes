@@ -51,44 +51,61 @@ $(function () {
                     });
                 });
 
-                // remove the current filter
-                var gridFilter = that.removeCurrentFilter();
+                if (options.gridDataSource.filter() != undefined) {
+                    var currentFilters = options.gridDataSource.filter().filters;
+                    log('Existing Filters');
+                    log(currentFilters);
 
-                // add the new filter
-                var filters = null;
-                var moreThanOneFilter = false;
-                if (gridFilter) {
-                    filters = gridFilter.filters;
-                    if (filters) {
-                        if (typeof filters[0].filters != 'undefined') {
-                            moreThanOneFilter = true;
-                        }
-                    }
-                }
-
-                if (filterCriteria.filters.length > 0) {
-                    var newFilters = null;
-                    if (gridFilter) {
-                        if (moreThanOneFilter) {
-                            newFilters = gridFilter;
-                            newFilters.filters.push(filterCriteria);
-                        } else {
-                            newFilters = {
-                                filters: [gridFilter],
-                                logic: "and"
-                            }
-                            newFilters.filters.push(filterCriteria);
-                        }
-                    } else {
-                        newFilters = {
-                            filters: [filterCriteria],
-                            logic: "and"
-                        }
-                    }
-                    options.gridDataSource.filter(newFilters);
+                    filterCriteria.filters.forEach(function (e, i) {
+                        currentFilters.push(e);
+                    });
+                    log('After adding custom filters');
+                    log(currentFilters);
+                    options.gridDataSource.filter(currentFilters);
                 } else {
-                    options.gridDataSource.filter(gridFilter);
+                    options.gridDataSource.filter(filterCriteria);
                 }
+                
+                
+
+                //// remove the current filter
+                //var gridFilter = that.removeCurrentFilter();
+
+                //// add the new filter
+                //var filters = null;
+                //var moreThanOneFilter = false;
+                //if (gridFilter) {
+                //    filters = gridFilter.filters;
+                //    if (filters) {
+                //        if (typeof filters[0].filters != 'undefined') {
+                //            moreThanOneFilter = true;
+                //        }
+                //    }
+                //}
+
+                //if (filterCriteria.filters.length > 0) {
+                //    var newFilters = null;
+                //    if (gridFilter) {
+                //        if (moreThanOneFilter) {
+                //            newFilters = gridFilter;
+                //            newFilters.filters.push(filterCriteria);
+                //        } else {
+                //            newFilters = {
+                //                filters: [gridFilter],
+                //                logic: "and"
+                //            }
+                //            newFilters.filters.push(filterCriteria);
+                //        }
+                //    } else {
+                //        newFilters = {
+                //            filters: [filterCriteria],
+                //            logic: "and"
+                //        }
+                //    }
+                //    options.gridDataSource.filter(newFilters);
+                //} else {
+                //    options.gridDataSource.filter(gridFilter);
+                //}
 
                 var filterIcon = $("[data-field='" + options.field + "'] > .k-grid-filter");
                 filterIcon.addClass('k-state-active');
