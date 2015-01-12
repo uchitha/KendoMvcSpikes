@@ -16,7 +16,11 @@
     @RenderSection("HeadContent")
 </head>
 
-<body>
-    @RenderBody()
-</body>
+    <body>
+        
+        <span>
+            <a href='@Url.Action("Persist","Grid")'>Persist</a>&nbsp;&nbsp;<a href='@Url.Action("Filter","Grid")'>Filter</a>
+        </span>
+        @RenderBody()
+    </body>
 </html>

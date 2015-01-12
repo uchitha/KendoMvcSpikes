@@ -40,19 +40,20 @@
                         e.ColumnHide("gridColumnHide");
                         e.ColumnShow("gridColumnShow");
                         e.ColumnReorder("gridColumnReorder");
+                        e.DataBinding("gridDataBinding");
                     })
-        .AutoBind(false)
+        .AutoBind(true)
         .Scrollable(s => s.Enabled(true).Height("auto"))
         .Pageable(p => p.Enabled(true).PreviousNext(true).Input(true).PageSizes(new [] {50,100,200}))
         .Sortable(s => s.Enabled(true))
         .Groupable(g => g.Enabled(true))
         .Filterable(f => f.Enabled(true))
-        .ColumnMenu()
+        //.ColumnMenu()
         .Columns(c =>
                      {
                          c.Bound(o => o.Id);
                          c.Bound(o => o.Number);
-                         c.Bound(o => o.Location);
+                         c.Bound(o => o.Location).Filterable(f => f.UI("locationFilter"));
                          c.Bound(o => o.TimeAtLocation).Format("{0:dd/MM/yyyy HH:mm}");
                          c.Bound(o => o.Position);
                          c.Bound(o => o.TrainNumber).Title("Train");
@@ -66,22 +67,30 @@
 
 <script>
 
+    var loadStateUrl = '@Url.Action("LoadState")';
+    var saveStateUrl = '@Url.Action("SaveState")';
+    var toPersist = false;
+
     $(document).ready(function () {
        
         log('On Document Load');
-        var gridStateRequest = gridLoadState();
+        if (toPersist) {
+            var gridStateRequest = MyMvcApp.enhancedKendoGrid.loadState(loadStateUrl);
 
-        gridStateRequest.done(function (gridState) {
-            if (gridState === '') {
-                $("#GridVehicles").data("kendoGrid").dataSource.read();
-                return;
-            }
-            log(gridState);
-         
-            var gridStateJson = JSON.parse(gridState);
-            reloadGridWithStatus('GridVehicles', gridStateJson);
-            
-        });
+            gridStateRequest.done(function(gridState) {
+                if (gridState === '') {
+                    $("#GridVehicles").data("kendoGrid").dataSource.read();
+                    return;
+                }
+                log('Grid state loaded from backend');
+                var gridStateJson = JSON.parse(gridState);
+                log(gridStateJson);
+                reloadGridWithStatus('GridVehicles', gridStateJson);
+            });
+        } else {
+            $('#GridVehicles').data('kendoGrid').dataSource.read();
+        }
+   
        
     });
 
@@ -98,93 +107,64 @@
         options.dataSource.filter = state.filter;
         options.dataSource.group = state.group;
 
-        grid.destroy();
+        //grid.destroy();
 
-        $('#' + gridName)
-            .empty()
-            .kendoGrid(options);
+        //$('#' + gridName)
+        //    .empty()
+        //    .kendoGrid(options);
         
         //Need to resolve the grid again since the previous 'grid' is destroyed
         $('#' + gridName).data('kendoGrid').dataSource.read();
     }
 
+   
     function gridColumnHide(e) {
-        var grid = $("#GridVehicles").data("kendoGrid");
-        var url = '@Url.Action("SaveState")';
-
-        var saveState = gridSaveState(grid, url);
-        saveState.done(function () {
-            log('Grid State Saved to Session (After Column Hide)');
-        });
+        log('Grid Event: ColumnHide');
+        var grid = this;
+        saveGridState(grid);
     }
 
     function gridColumnShow(e) {
+        log('Grid Event: ColumnShow');
         var grid = this;
-        var saveState = gridSaveState(grid);
-        saveState.done(function () {
-            log('Grid State Saved to Session (After Column Show)');
-        });
+        saveGridState(grid);
     }
 
     function gridColumnReorder(e) {
-//        var grid = this;
-//        setTimeout(function () {
-//            var saveState = gridSaveState(grid);
-//            saveState.done(function () {
-//                log('Grid State Saved to Session (After Column Reorder)');
-//            });
-        //        });
-        gridDataBound(e);
+        log('Grid Event: ColumnReorder');
+        var grid = this;
+        saveGridState(grid);
     }
 
     function gridDataBound(e) {
+        log('Grid Event: DataBound');
         var grid = this;
-        setTimeout(function() {
-            var saveState = gridSaveState(grid);
-            saveState.done(function() {
-                log('Grid State Saved to Session (After Column Databound)');
+        saveGridState(grid);
+    }
+
+    function gridDataBinding(e) {
+        log('Grid Event: DataBinding');
+        log(this.dataSource.filter());
+    }
+
+    function locationFilter(element) {
+        var grid = $("#GridVehicles").data('kendoGrid');
+        MyMvcApp.customKendoFilters.filterByAjax(element, 'Location', '@Url.Action("_LoadLocations")', grid.dataSource);
+    }
+
+
+    function saveGridState(grid) {
+        if (toPersist) {
+            setTimeout(function () {
+                var saveState = MyMvcApp.enhancedKendoGrid.saveState(grid, saveStateUrl);
+                saveState.done(function () {
+                    log('Grid State Saved to Session');
+                });
             });
-        });
+        }
+       
     }
 
-    //common function
-    function gridSaveState(grid) {
 
-        var dataSource = grid.dataSource;
-        
-        var gridState = {
-            columns: grid.columns,
-            page: dataSource.page(),
-            pageSize: dataSource.pageSize(),
-            sort: dataSource.sort(),
-            filter: dataSource.filter(),
-            group: dataSource.group()
-        };
-        var gridStateSerialized = JSON.stringify(gridState);
 
-        
-        log(gridStateSerialized);
-
-        var url = '@Url.Action("SaveState")';
-        var saveStateRequest = $.ajax({
-            url: url,
-            type: 'POST',
-            data: {
-                gridState: gridStateSerialized
-            }
-        });
-
-        return saveStateRequest;
-    }
-
-    //common function
-    function gridLoadState() {
-        var url = '@Url.Action("LoadState")';
-        var loadStateRequest = $.ajax({
-            url: url,
-            type: 'POST'
-        });
-
-        return loadStateRequest;
-    }
 </script>
